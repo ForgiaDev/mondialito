@@ -1,0 +1,5 @@
+__pycache__
+euro2024/
+resources/
+.env
+start.sh
