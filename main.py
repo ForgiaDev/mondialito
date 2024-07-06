@@ -312,7 +312,7 @@ def main():
     # TODO: remove, just for testing
     async def test_message(*args):
         await bot.send_message(
-            chat_id=os.environ.get("GROUP_CHAT_ID"), text="big enormous sex"
+            chat_id=os.environ.get("GROUP_CHAT_ID"), text="test message"
         )
 
     # job_queue.run_repeating(test_message, interval=10, first=0)
