@@ -2,9 +2,11 @@ import requests
 import os
 import cairosvg
 import tempfile
-import datetime
+import pprint as pp
+from datetime import datetime
 
-import image_generation as ig
+
+import src.image_generation as ig
 
 from PIL import Image
 from dotenv import load_dotenv
@@ -85,11 +87,12 @@ def get_daily_calendar():
         Get the matches of the current day
         """
         # get the current date
-        current_date = datetime.now().date()
+        # current_date = datetime.now().date()
+        current_date = datetime.strptime("2024-07-06", "%Y-%m-%d").date()
 
         # filter the matches of the current day
         matches_today = [
-            match for match in matches if match["utcDate"].date() == current_date
+            match for match in matches if datetime.strptime(match["utcDate"], "%Y-%m-%dT%H:%M:%S%z").date() == current_date
         ]
 
         return matches_today

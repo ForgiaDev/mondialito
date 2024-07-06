@@ -78,7 +78,7 @@ async def process_daily_matches(bot, job_queue):
     """
     Send the daily matches to the group chat in an automatic way
     """
-    daily_image_calendar, matches_today = API.get_daily_calendar()
+    matches_today, daily_image_calendar = API.get_daily_calendar()
 
     if not matches_today:
         await bot.send_message(
@@ -86,6 +86,9 @@ async def process_daily_matches(bot, job_queue):
             text="No matches today!" + CRY_EMOTE,
         )
     else:
+        if matches_today[0]["stage"] == "GROUP_STAGE":
+            await get_image_group_stage(bot)
+        
         await bot.send_photo(
             chat_id=os.environ.get("GROUP_CHAT_ID"),
             photo=daily_image_calendar,
@@ -223,11 +226,6 @@ def main():
     # schedule.every().day.at("00:00").do(send_leaderboard)
 
     # we can just do it via telegram bot using run_repeating
-    # TODO: remove, just for testing
-    async def test_message(*args):
-        await bot.send_message(
-            chat_id=os.environ.get("GROUP_CHAT_ID"), text="test message"
-        )
 
     # job_queue.run_repeating(test_message, interval=10, first=0)
 

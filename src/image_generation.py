@@ -1,15 +1,30 @@
 import os
 import io
 
-import API_connection as API
+import src.API_connection as API
 
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 
 
 ## Load the environment variables that is located in the .env file one directory above
 load_dotenv(dotenv_path="../.env")
+
+
+def image_settings(image):
+    """
+    Set the image settings
+    """
+    # resize the image
+    image = image.resize((1280, 720))
+    
+    # reduce the transparency of the image
+    enhancer = ImageEnhance.Brightness(image)
+    image = enhancer.enhance(0.35)
+    image.putalpha(255)
+    
+    return image
 
 
 def get_image_group_stage(teams):
@@ -18,12 +33,7 @@ def get_image_group_stage(teams):
     """
     # load the background image
     image = Image.open("background.png")
-
-    # resize the image
-    image = image.resize((1280, 720))
-
-    # set the transparency level
-    image.putalpha(30)
+    image = image_settings(image)
 
     # calculate the width and height
     width, height = image.size
@@ -32,28 +42,49 @@ def get_image_group_stage(teams):
     draw = ImageDraw.Draw(image)
 
     # load the font
-    font_group = ImageFont.truetype(os.environ.get("FONT_NAME"), 40)
-    font_team = ImageFont.truetype(os.environ.get("FONT_NAME"), 30)
+    font_group = ImageFont.truetype(os.environ.get("FONT_NAME"), 30)
+    font_team = ImageFont.truetype(os.environ.get("FONT_NAME"), 20)
 
     # text color (white)
     text_color = (255, 255, 255)
 
     # starting position using size of the image
-    x = width // 2 - 400
-    y = height // 2 - 200
+    x = width // 2 - 500
+    y = height // 2 - 300
 
     # for each group print the teams in order of position and the corresponding score
-    for group in teams["standings"]:
+    for i, group in enumerate(teams["standings"]):
+        
+        if i == 3:
+            x = width // 2 - 500
+            y = height // 2 + 50
+            
         draw.text((x, y), f"{group['group']}", fill=text_color, font=font_group)
         y += 50
         for team in group["table"]:
-            draw.text(
-                (x, y),
-                f"{team['position']}. {team['team']['name']}\t - {team['points']} points",
-                fill=text_color,
-                font=font_team,
-            )
+            # if the team is qualified for the next stage, print the team name in bold
+            if team["qualified"]:
+                draw.text(
+                    (x, y),
+                    f"{team['position']}. {team['team']['name']}\t - {team['points']} points",
+                    fill=text_color,
+                    font=font_team,
+                )
+            else:
+                draw.text(
+                    (x, y),
+                    f"{team['position']}. {team['team']['name']}\t - {team['points']} points",
+                    fill=text_color,
+                    font=font_team,
+                )
             y += 40
+        # take the initial y position for the next group and calculate the x position
+        if i >= 3:
+            y = height // 2 + 50
+            x += 300
+        else:
+            y = height // 2 - 300
+            x += 300
 
     # save the image using BytesIO
     image_bytes = io.BytesIO()
@@ -69,13 +100,8 @@ def get_matchday_image(today_matches):
     """
     # load the background image
     image = Image.open("background.png")
-
-    # resize the image
-    image = image.resize((1280, 720))
-
-    # set the transparency level
-    image.putalpha(30)
-
+    image = image_settings(image)
+    
     # calculate the width and height
     width, height = image.size
 
@@ -95,8 +121,10 @@ def get_matchday_image(today_matches):
     y = height // 2 - 200
 
     # format the date
-    formatted_date = datetime.strptime(datetime.now().date(), "%Y-%m-%d").strftime(
-        "%d/%m/%Y"
+    formatted_date = (
+        datetime.strptime(today_matches[0]["utcDate"], "%Y-%m-%dT%H:%M:%S%z").strftime(
+            "%d %B %Y"
+        )
     )
 
     draw.text(
@@ -126,8 +154,8 @@ def get_matchday_image(today_matches):
         )
 
         # get the flags of the teams
-        flag_home = API.get_flag(home_team)
-        flag_away = API.get_flag(away_team)
+        flag_home = API.get_team_flag(home_team)
+        flag_away = API.get_team_flag(away_team)
 
         # get the time of the match increased by 2 hours
         time = (
